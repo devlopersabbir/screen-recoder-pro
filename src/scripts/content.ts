@@ -1,6 +1,6 @@
 import Browser from "webextension-polyfill";
 
-Browser.runtime.onMessage.addListener((active) => {
+Browser.runtime.onMessage.addListener((active: any) => {
   if (active) {
     const cameraId = "";
     const camera = document.getElementById(cameraId);
