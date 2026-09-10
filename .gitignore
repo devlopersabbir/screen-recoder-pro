@@ -12,6 +12,13 @@ node_modules
 dist
 dist-ssr
 *.local
+*.zip
+sources.zip
+secret.txt
+chrome_secrets.json
+.env
+v*_chrome
+v*_firefox
 
 # Editor directories and files
 .idea
@@ -21,3 +28,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+plan

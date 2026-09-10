@@ -1,26 +1,160 @@
 {
   "name": "screen-recorder-pro",
-  "description": "Is a Browser Extension that will allows us to record screen. Remember Chrome & Firefox both support this plugin",
+  "displayName": "Screen Recorder Pro",
+  "description": "Simple, private, local-first screen recorder. Record your entire screen, window, or tab offline with zero uploads or watermarks.",
+  "version": "0.0.1",
   "private": false,
-  "version": "1.0.0",
   "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/devlopersabbir/screen-recoder-pro",
+  "repository": {
+    "directory": "screen-recoder-pro",
+    "type": "git",
+    "url": "https://github.com/devlopersabbir/screen-recoder-pro"
+  },
+  "author": {
+    "email": "devlopersabbir@gmail.com",
+    "name": "Sabbir Hossain Shuvo",
+    "url": "https://github.com/devlopersabbir"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build"
+    "dev": "rm -rf dist && vite",
+    "dev:brave": "rm -rf dist && cross-env TARGET=brave vite",
+    "dev:chrome": "rm -rf dist && cross-env TARGET=chrome vite",
+    "dev:firefox": "rm -rf dist && cross-env TARGET=firefox vite",
+    "build": "tsc && vite build",
+    "test": "vitest run",
+    "lint:firefox": "bun run build:firefox && bunx web-ext lint --source-dir=dist",
+    "deploy:firefox": "bun ./scripts/deploy-firefox.ts",
+    "deploy:chrome": "bun ./scripts/deploy-chrome.ts",
+    "zip": "bun ./zip.ts",
+    "zip:all": "bun ./zip.ts TARGET=all",
+    "zip:chrome": "bun ./zip.ts TARGET=chrome",
+    "zip:firefox": "bun ./zip.ts TARGET=firefox",
+    "build:chrome": "tsc && cross-env TARGET=chrome vite build",
+    "build:firefox": "tsc && cross-env TARGET=firefox vite build"
+  },
+  "release": {
+    "tagFormat": "v${version}",
+    "branches": [
+      "main",
+      "master",
+      "next",
+      {
+        "name": "beta",
+        "prerelease": true
+      },
+      {
+        "name": "alpha",
+        "prerelease": true
+      }
+    ],
+    "plugins": [
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "angular",
+          "releaseRules": [
+            {
+              "type": "fix",
+              "release": "patch"
+            },
+            {
+              "type": "perf",
+              "release": "patch"
+            },
+            {
+              "type": "refactor",
+              "release": "patch"
+            },
+            {
+              "type": "style",
+              "release": "patch"
+            },
+            {
+              "type": "docs",
+              "release": "patch"
+            },
+            {
+              "type": "chore",
+              "release": "patch"
+            }
+          ]
+        }
+      ],
+      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/changelog",
+        {
+          "changelogFile": "CHANGELOG.md"
+        }
+      ],
+      [
+        "@semantic-release/npm",
+        {
+          "npmPublish": false
+        }
+      ],
+      [
+        "@semantic-release/exec",
+        {
+          "prepareCmd": "bun ./zip.ts TARGET=all"
+        }
+      ],
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "CHANGELOG.md"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ],
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            {
+              "path": "v*_chrome.zip",
+              "label": "Screen Recorder Pro Chrome Extension (v${nextRelease.version})"
+            },
+            {
+              "path": "v*_firefox.zip",
+              "label": "Screen Recorder Pro Firefox Add-on (v${nextRelease.version})"
+            }
+          ]
+        }
+      ]
+    ]
   },
   "dependencies": {
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^11.0.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/webextension-polyfill": "^0.12.6",
-    "@vitejs/plugin-react-swc": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "chrome-webstore-upload": "^6.0.0",
+    "cross-env": "^10.1.0",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^20.14.3",
+    "jsdom": "^30.0.1",
+    "semantic-release": "^25.0.9",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vite-plugin-web-extension": "^4.5.1",
-    "webextension-polyfill": "^0.12.0"
+    "vitest": "^5.0.0",
+    "web-ext": "^10.6.0",
+    "webextension-polyfill": "^0.12.0",
+    "zip-a-folder": "^7.0.0"
   },
   "overrides": {
     "adm-zip": "^0.6.0",
