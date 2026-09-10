@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, fireEvent, act } from "@testing-library/react";
+import { render, fireEvent, act, cleanup } from "@testing-library/react";
 import { App } from "./App";
 import { recorderService } from "../recorder/RecorderService";
 
@@ -9,6 +9,7 @@ describe("Popup App Component", () => {
   });
 
   afterEach(() => {
+    cleanup();
     recorderService.reset();
   });
 

@@ -1,8 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, fireEvent, cleanup } from "@testing-library/react";
 import { RecordingControls } from "./RecordingControls";
 
 describe("RecordingControls Component", () => {
+  afterEach(() => {
+    cleanup();
+  });
   it("renders active recording state correctly", () => {
     const handleStop = vi.fn();
     const { getByText, getByRole } = render(<RecordingControls onStop={handleStop} />);

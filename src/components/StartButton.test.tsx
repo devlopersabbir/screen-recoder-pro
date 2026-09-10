@@ -1,8 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, fireEvent, cleanup } from "@testing-library/react";
 import { StartButton } from "./StartButton";
 
 describe("StartButton Component", () => {
+  afterEach(() => {
+    cleanup();
+  });
   it("renders idle state correctly", () => {
     const handleClick = vi.fn();
     const { getByRole } = render(<StartButton onClick={handleClick} />);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, cleanup } from "@testing-library/react";
 import { useRecorder } from "./useRecorder";
 import { recorderService } from "../recorder/RecorderService";
 
@@ -9,6 +9,7 @@ describe("useRecorder hook", () => {
   });
 
   afterEach(() => {
+    cleanup();
     recorderService.reset();
   });
 
