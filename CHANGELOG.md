@@ -1,3 +1,10 @@
+# 1.0.0 (2026-09-10)
+
+
+### Features
+
+* initial project setup ([1164d32](https://github.com/devlopersabbir/screen-recoder-pro/commit/1164d3259341244c4d5bac5f48d282e5f5e2d8bb))
+
 # Changelog
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
