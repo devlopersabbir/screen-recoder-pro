@@ -107,6 +107,7 @@ async function main() {
     `--api-secret=${secret}`,
     `--id=${id}`,
     `--approval-notes=${approvalNotes}`,
+    existsSync("amo-metadata.json") ? "--amo-metadata=amo-metadata.json" : "",
   ].filter(Boolean);
 
   const signResult = spawnSync("bunx", signArgs, {
