@@ -85,10 +85,16 @@ function generateManifest() {
 
   const cleanManifestVersion = pkg.version.split("-")[0].split("+")[0];
 
-  const background = {
-    service_worker: "src/background/index.ts",
-    type: "module",
-  };
+  const background =
+    targetBrowser === "firefox"
+      ? {
+          scripts: ["src/background/index.ts"],
+          type: "module",
+        }
+      : {
+          service_worker: "src/background/index.ts",
+          type: "module",
+        };
 
   const browserSpecificSettings =
     targetBrowser === "firefox"
