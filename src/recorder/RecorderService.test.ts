@@ -224,8 +224,26 @@ describe("RecorderService", () => {
       expect(states).toContain("RECORDING");
       expect(service.getState()).toBe("RECORDING");
       expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledWith({
-        video: { displaySurface: "monitor" },
+        video: {
+          displaySurface: "monitor",
+          frameRate: { ideal: 60, max: 60 },
+          width: { ideal: 1920, max: 3840 },
+          height: { ideal: 1080, max: 2160 },
+        },
         audio: true,
+      });
+    });
+
+    it("should respect custom options such as 30 fps and audio disabled", async () => {
+      await service.startRecording({ frameRate: 30, audio: false });
+      expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledWith({
+        video: {
+          displaySurface: "monitor",
+          frameRate: { ideal: 30, max: 30 },
+          width: { ideal: 1920, max: 3840 },
+          height: { ideal: 1080, max: 2160 },
+        },
+        audio: false,
       });
     });
 

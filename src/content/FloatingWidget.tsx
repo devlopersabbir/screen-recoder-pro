@@ -6,6 +6,7 @@ import {
   ExtensionMessage,
   StateUpdateMessage,
 } from "../shared/messages";
+import { DEFAULT_SETTINGS, getSettings, RecorderSettings } from "../utils/settings";
 
 export interface FloatingWidgetProps {
   initialState?: RecordingState;
@@ -56,6 +57,7 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
   const [testState, setTestState] = useState<RecordingState | null>(initialState ?? null);
   const activeState: RecordingState = testState ?? hookState;
 
+  const [settings, setSettings] = useState<RecorderSettings>(DEFAULT_SETTINGS);
   const [seconds, setSeconds] = useState<number>(0);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [position, setPosition] = useState<{ x: number; y: number }>(() => {
@@ -64,6 +66,11 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
       y: typeof window !== "undefined" ? Math.max(20, window.innerHeight - 80) : 600,
     };
   });
+
+  // Load preferences
+  useEffect(() => {
+    getSettings().then((s) => setSettings(s));
+  }, []);
 
   const isDraggingRef = useRef<boolean>(false);
   const dragStartOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -75,7 +82,12 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     if (activeState === "COMPLETED" && result && !hasAutoDownloadedRef.current) {
       hasAutoDownloadedRef.current = true;
       try {
-        downloadRecording();
+        getSettings().then((s) => {
+          downloadRecording({
+            subfolder: s.downloadSubfolder,
+            saveAs: s.downloadLocationPrompt,
+          });
+        });
       } catch (err) {
         console.error("[Screen Recorder Pro] Failed to trigger auto-download:", err);
       }
@@ -183,10 +195,21 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
   }, []);
 
   // Action Handlers
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     onStart?.();
-    startRecording();
+    const currentSettings = await getSettings();
+    startRecording({
+      format: currentSettings.format,
+      quality: currentSettings.quality,
+      frameRate: currentSettings.frameRate,
+      audio: currentSettings.systemAudio ?? currentSettings.audio,
+      micAudio: currentSettings.micAudio,
+      micDeviceId: currentSettings.micDeviceId,
+      audioOutputDeviceId: currentSettings.audioOutputDeviceId,
+      filenamePrefix: currentSettings.filenamePrefix,
+    });
   }, [onStart, startRecording]);
+
 
   const handlePauseResume = useCallback(() => {
     if (activeState === "RECORDING") {
@@ -230,8 +253,12 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     }
   }, [confirmHandler, onCancel, cancelRecording, initialState]);
 
-  const handleDownloadAgain = useCallback(() => {
-    downloadRecording();
+  const handleDownloadAgain = useCallback(async () => {
+    const s = await getSettings();
+    downloadRecording({
+      subfolder: s.downloadSubfolder,
+      saveAs: s.downloadLocationPrompt,
+    });
   }, [downloadRecording]);
 
   const handleReset = useCallback(() => {

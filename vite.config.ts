@@ -113,11 +113,23 @@ function generateManifest() {
     homepage_url: "https://github.com/devlopersabbir/screen-recoder-pro",
     icons: {
       "16": "icons/icon16.png",
+      "19": "icons/icon19.png",
       "32": "icons/icon32.png",
+      "38": "icons/icon38.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png",
     },
-    action: {},
+    action: {
+      default_icon: {
+        "16": "icons/icon16.png",
+        "19": "icons/icon19.png",
+        "32": "icons/icon32.png",
+        "38": "icons/icon38.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png",
+      },
+      default_title: "Screen Recorder Pro",
+    },
     options_ui: {
       page: "src/options/index.html",
       open_in_tab: true,
@@ -130,7 +142,13 @@ function generateManifest() {
         run_at: "document_idle",
       },
     ],
-    permissions: ["activeTab", "scripting"],
+    permissions: ["activeTab", "scripting", "storage", "downloads"],
+    web_accessible_resources: [
+      {
+        resources: ["v1.png", "icons/*"],
+        matches: ["<all_urls>"],
+      },
+    ],
     ...(targetBrowser === "chrome" ? { minimum_chrome_version: "116.0" } : {}),
     ...(browserSpecificSettings
       ? { browser_specific_settings: browserSpecificSettings }

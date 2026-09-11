@@ -34,8 +34,20 @@ export interface RecorderError {
   message: string;
 }
 
+export type VideoFormat = "mp4" | "webm";
+export type VideoQuality = "standard" | "high" | "ultra";
+
 export interface RecorderOptions {
   audio?: boolean;
+  micAudio?: boolean;
+  micDeviceId?: string;
+  audioOutputDeviceId?: string;
+  format?: VideoFormat;
+  quality?: VideoQuality;
+  videoBitsPerSecond?: number;
+  audioBitsPerSecond?: number;
+  frameRate?: number;
+  filenamePrefix?: string;
 }
 
 export type StateChangeListener = (state: RecordingState) => void;

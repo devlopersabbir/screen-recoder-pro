@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { recorderService } from "../recorder/RecorderService";
 import { RecorderOptions } from "../recorder/types";
-import { downloadBlob } from "../utils/download";
+import { downloadBlob, DownloadOptions } from "../utils/download";
 
 export function useRecorder() {
   const { state, result, error } = useSyncExternalStore(
@@ -29,9 +29,9 @@ export function useRecorder() {
     recorderService.cancelRecording();
   }, []);
 
-  const downloadRecording = useCallback(() => {
+  const downloadRecording = useCallback((options?: DownloadOptions) => {
     if (result) {
-      downloadBlob(result.blob, result.filename);
+      downloadBlob(result.blob, result.filename, options);
     }
   }, [result]);
 

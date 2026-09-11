@@ -16,6 +16,20 @@ if (typeof globalThis !== "undefined" && !(globalThis as any).chrome) {
       query: vi.fn().mockResolvedValue([]),
       sendMessage: vi.fn().mockResolvedValue(undefined),
     },
+    storage: {
+      local: {
+        get: vi.fn().mockResolvedValue({}),
+        set: vi.fn().mockResolvedValue(undefined),
+      },
+    },
+    downloads: {
+      download: vi.fn((_options: any, callback?: (id: number) => void) => {
+        if (typeof callback === "function") {
+          callback(123);
+        }
+        return 123;
+      }),
+    },
   };
 }
 

@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="public/v1.png" alt="Screen Recorder Pro Logo" width="80" height="80" style="border-radius: 16px; margin-bottom: 16px;" />
+
 [![CI](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/ci.yml)
 [![Release](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/release.yml/badge.svg)](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

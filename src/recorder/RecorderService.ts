@@ -15,7 +15,17 @@ import { ExtensionMessage } from "../shared/messages";
 
 const log = createLogger("RecorderService");
 
-const MIME_CANDIDATES = [
+const MP4_MIME_CANDIDATES = [
+  "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  "video/mp4;codecs=avc1,mp4a.40.2",
+  "video/mp4;codecs=avc1,opus",
+  "video/mp4;codecs=avc1",
+  "video/mp4;codecs=h264,opus",
+  "video/mp4;codecs=h264",
+  "video/mp4",
+];
+
+const WEBM_MIME_CANDIDATES = [
   "video/webm;codecs=vp9,opus",
   "video/webm;codecs=vp8,opus",
   "video/webm;codecs=vp9",
@@ -23,13 +33,18 @@ const MIME_CANDIDATES = [
   "video/webm",
 ];
 
+const MIME_CANDIDATES = [...MP4_MIME_CANDIDATES, ...WEBM_MIME_CANDIDATES];
+
 export class RecorderService {
   private state: RecordingState = "IDLE";
   private mediaStream: MediaStream | null = null;
+  private micStream: MediaStream | null = null;
+  private audioContext: AudioContext | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
   private startTime: number = 0;
   private selectedMimeType: string = "";
+  private filenamePrefix: string = "screen-recording";
 
   private snapshot: RecorderSnapshot = {
     state: "IDLE",
@@ -142,13 +157,19 @@ export class RecorderService {
   }
 
   /**
-   * Identifies the best supported WebM MIME type available in the browser.
+   * Identifies the best supported MIME type available in the browser,
+   * prioritizing the user's preferred format (mp4 or webm).
    */
-  public getBestSupportedMimeType(): string {
+  public getBestSupportedMimeType(preferredFormat: "mp4" | "webm" = "mp4"): string {
     if (typeof MediaRecorder === "undefined") {
       return "";
     }
-    for (const mime of MIME_CANDIDATES) {
+    const candidates =
+      preferredFormat === "mp4"
+        ? [...MP4_MIME_CANDIDATES, ...WEBM_MIME_CANDIDATES]
+        : [...WEBM_MIME_CANDIDATES, ...MP4_MIME_CANDIDATES];
+
+    for (const mime of candidates) {
       if (MediaRecorder.isTypeSupported(mime)) {
         return mime;
       }
@@ -173,11 +194,12 @@ export class RecorderService {
       return;
     }
 
-    const mimeType = this.getBestSupportedMimeType();
+    const preferredFormat = options.format ?? "mp4";
+    const mimeType = this.getBestSupportedMimeType(preferredFormat);
     if (!mimeType) {
       this.emitError(
         "NO_SUPPORTED_MIME_TYPE",
-        "No supported WebM recording formats found in this browser."
+        "No supported recording formats found in this browser."
       );
       return;
     }
@@ -186,16 +208,86 @@ export class RecorderService {
     this.setState("REQUESTING_PERMISSION");
     this.recordedChunks = [];
 
+    // Map quality preset or custom bitrate (default: 8 Mbps high definition)
+    let videoBitsPerSecond = options.videoBitsPerSecond;
+    if (!videoBitsPerSecond) {
+      if (options.quality === "ultra") {
+        videoBitsPerSecond = 16_000_000; // 16 Mbps for 4K / Ultra HD
+      } else if (options.quality === "standard") {
+        videoBitsPerSecond = 4_000_000; // 4 Mbps
+      } else {
+        videoBitsPerSecond = 8_000_000; // 8 Mbps High Definition default
+      }
+    }
+
+    const frameRate = options.frameRate ?? (options.quality === "standard" ? 30 : 60);
+
     try {
-      // Prompt native screen-sharing picker
+      // Prompt native screen-sharing picker with high-fidelity constraints
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           displaySurface: "monitor",
+          frameRate: { ideal: frameRate, max: frameRate },
+          width: { ideal: 1920, max: 3840 },
+          height: { ideal: 1080, max: 2160 },
         },
         audio: options.audio ?? true,
       });
 
       this.mediaStream = stream;
+      this.filenamePrefix = options.filenamePrefix || "screen-recording";
+
+      let finalStream = stream;
+      if (options.micAudio && navigator.mediaDevices?.getUserMedia) {
+        try {
+          let mic: MediaStream | null = null;
+          const targetDeviceId =
+            options.micDeviceId && options.micDeviceId !== "default"
+              ? options.micDeviceId
+              : undefined;
+
+          try {
+            mic = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                deviceId: targetDeviceId ? { ideal: targetDeviceId } : undefined,
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+            });
+          } catch (micErr) {
+            log.warn("Microphone request with constraints failed, falling back to default", micErr);
+            mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          }
+
+          this.micStream = mic;
+          const micTrack = mic.getAudioTracks()[0];
+          const sysTrack = stream.getAudioTracks()[0];
+
+          if (micTrack && sysTrack && typeof AudioContext !== "undefined") {
+            const audioCtx = new AudioContext();
+            this.audioContext = audioCtx;
+            const dest = audioCtx.createMediaStreamDestination();
+            const sysSource = audioCtx.createMediaStreamSource(new MediaStream([sysTrack]));
+            const micSource = audioCtx.createMediaStreamSource(new MediaStream([micTrack]));
+            sysSource.connect(dest);
+            micSource.connect(dest);
+
+            const mixedAudioTrack = dest.stream.getAudioTracks()[0];
+            finalStream = new MediaStream([
+              ...stream.getVideoTracks(),
+              mixedAudioTrack,
+            ]);
+          } else if (micTrack && !sysTrack) {
+            finalStream = new MediaStream([
+              ...stream.getVideoTracks(),
+              micTrack,
+            ]);
+          }
+        } catch (e) {
+          log.warn("Microphone capture skipped or denied:", e);
+        }
+      }
 
       // Handle user manually clicking browser's native "Stop sharing" button
       const videoTrack = stream.getVideoTracks()[0];
@@ -208,8 +300,12 @@ export class RecorderService {
         });
       }
 
-      // Initialize MediaRecorder
-      const recorder = new MediaRecorder(stream, { mimeType });
+      // Initialize MediaRecorder with high bitrate and crisp audio
+      const recorder = new MediaRecorder(finalStream, {
+        mimeType,
+        videoBitsPerSecond,
+        audioBitsPerSecond: options.audioBitsPerSecond ?? 128_000,
+      });
       this.mediaRecorder = recorder;
 
       recorder.ondataavailable = (event: BlobEvent) => {
@@ -339,7 +435,7 @@ export class RecorderService {
    */
   private finalizeRecording(): void {
     const durationMs = Date.now() - this.startTime;
-    const mimeType = this.selectedMimeType || "video/webm";
+    const mimeType = this.selectedMimeType || "video/mp4";
 
     // Clean up tracks first
     this.cleanupTracks();
@@ -349,9 +445,11 @@ export class RecorderService {
       return;
     }
 
+    const isMp4 = mimeType.toLowerCase().includes("mp4");
+    const extension = isMp4 ? "mp4" : "webm";
     const blob = new Blob(this.recordedChunks, { type: mimeType });
     const url = URL.createObjectURL(blob);
-    const filename = generateFilename(new Date(), "webm");
+    const filename = generateFilename(new Date(), extension, this.filenamePrefix);
 
     const result: RecordingResult = {
       blob,
@@ -390,6 +488,24 @@ export class RecorderService {
         }
       });
       this.mediaStream = null;
+    }
+    if (this.micStream) {
+      this.micStream.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {
+          // ignore
+        }
+      });
+      this.micStream = null;
+    }
+    if (this.audioContext) {
+      try {
+        this.audioContext.close();
+      } catch {
+        // ignore
+      }
+      this.audioContext = null;
     }
   }
 
