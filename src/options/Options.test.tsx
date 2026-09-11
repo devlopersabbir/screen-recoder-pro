@@ -24,14 +24,24 @@ describe("Options Component", () => {
     });
   });
 
-  it("renders header and tab navigation", () => {
-    const { getByText } = render(<Options />);
+  it("renders header, tab navigation, and Buy Me a Coffee links", () => {
+    const { getByText, getAllByText } = render(<Options />);
 
     expect(getByText("Screen Recorder Pro")).toBeInTheDocument();
     expect(getByText(/Video & Format/)).toBeInTheDocument();
     expect(getByText(/Audio & Devices/)).toBeInTheDocument();
     expect(getByText(/Export & Save/)).toBeInTheDocument();
+
+    const coffeeButtons = getAllByText(/Buy me a coffee/);
+    expect(coffeeButtons.length).toBeGreaterThanOrEqual(1);
+    const links = coffeeButtons.map((btn) => btn.closest("a"));
+    for (const link of links) {
+      expect(link).toHaveAttribute("href", "https://buymeacoffee.com/devlopersabbir");
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
   });
+
 
   it("renders video settings on Video tab and allows toggling controls", () => {
     const { getByText } = render(<Options />);
