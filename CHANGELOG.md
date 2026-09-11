@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/devlopersabbir/screen-recoder-pro/compare/v1.1.2...v1.1.3) (2026-09-11)
+
+
+### Bug Fixes
+
+* **deploy:** add amo-metadata with categories and summary for firefox ([43b3e17](https://github.com/devlopersabbir/screen-recoder-pro/commit/43b3e17c28d3f272f193c771d309b68eaaa58a62))
+
 ## [1.1.2](https://github.com/devlopersabbir/screen-recoder-pro/compare/v1.1.1...v1.1.2) (2026-09-11)
 
 
