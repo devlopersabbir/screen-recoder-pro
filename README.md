@@ -2,8 +2,6 @@
 
 <div align="center">
 
-<img src="public/v1.png" alt="Screen Recorder Pro Logo" width="80" height="80" style="border-radius: 16px; margin-bottom: 16px;" />
-
 [![CI](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/ci.yml)
 [![Release](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/release.yml/badge.svg)](https://github.com/devlopersabbir/screen-recoder-pro/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -65,11 +63,13 @@ Screen Recorder Pro makes recording your screen as simple as four steps:
 ### Installation
 
 #### Option 1: Load Pre-Packaged Release
+
 1. Download the latest `v*_chrome.zip` or `v*_firefox.zip` from [Releases](https://github.com/devlopersabbir/screen-recoder-pro/releases).
 2. Unpack the zip archive to a local folder.
 3. Follow the browser loading instructions below.
 
 #### Option 2: Build from Source
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/devlopersabbir/screen-recoder-pro.git
@@ -85,11 +85,13 @@ bun dev
 ### Loading the Extension into Your Browser
 
 #### Google Chrome / Brave / Microsoft Edge / Arc
+
 1. Open `chrome://extensions/` (or `edge://extensions/` / `brave://extensions/`).
 2. Toggle on **Developer mode** in the top right corner.
 3. Click **Load unpacked** and select the `dist/` directory.
 
 #### Mozilla Firefox
+
 1. Open `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on...**.
 3. Select `dist/manifest.json`.
@@ -100,14 +102,14 @@ bun dev
 
 Screen Recorder Pro is built to adhere to WebExtensions standards and runs across modern desktop browsers:
 
-| Browser | Supported | Minimum Version | Note |
-| :--- | :---: | :---: | :--- |
-| **Google Chrome** | ✅ | 116+ | Manifest V3 Service Worker |
-| **Mozilla Firefox** | ✅ | 142+ | Manifest V3 Background Scripts & Gecko ID |
-| **Microsoft Edge** | ✅ | 116+ | Chromium MV3 compatible |
-| **Brave Browser** | ✅ | 116+ | Chromium MV3 compatible |
-| **Opera** | ✅ | 102+ | Chromium MV3 compatible |
-| **Arc Browser** | ✅ | Latest | Chromium MV3 compatible |
+| Browser             | Supported | Minimum Version | Note                                      |
+| :------------------ | :-------: | :-------------: | :---------------------------------------- |
+| **Google Chrome**   |    ✅     |      116+       | Manifest V3 Service Worker                |
+| **Mozilla Firefox** |    ✅     |      142+       | Manifest V3 Background Scripts & Gecko ID |
+| **Microsoft Edge**  |    ✅     |      116+       | Chromium MV3 compatible                   |
+| **Brave Browser**   |    ✅     |      116+       | Chromium MV3 compatible                   |
+| **Opera**           |    ✅     |      102+       | Chromium MV3 compatible                   |
+| **Arc Browser**     |    ✅     |     Latest      | Chromium MV3 compatible                   |
 
 ---
 
@@ -115,21 +117,21 @@ Screen Recorder Pro is built to adhere to WebExtensions standards and runs acros
 
 All project tasks can be run using either [Bun](https://bun.sh) or `npm`:
 
-| Command | Description |
-| :--- | :--- |
-| `bun dev` | Starts Vite dev server and auto-launches **Brave Browser** with extension loaded |
-| `bun run dev:brave` | Starts Vite dev server explicitly targeting **Brave Browser** |
-| `bun run dev:firefox` | Starts Vite dev server explicitly targeting **Mozilla Firefox** |
-| `bun run dev:chrome` | Starts Vite dev server explicitly targeting **Google Chrome** |
-| `bun test` | Runs the full unit and integration test suite with coverage validation |
-| `bun run build:chrome` | Compiles production bundle for Google Chrome (Manifest V3) |
-| `bun run build:firefox` | Compiles production bundle for Mozilla Firefox (Manifest V3) |
-| `bun run zip:all` | Compiles and packages both `v*_chrome.zip` and `v*_firefox.zip` |
-| `bun run zip:chrome` | Compiles and packages Chrome extension zip bundle |
-| `bun run zip:firefox` | Compiles and packages Firefox add-on zip bundle |
-| `bun run lint:firefox` | Validates Firefox bundle with Mozilla's `web-ext lint` |
-| `bun run deploy:chrome` | Compiles, packages, and uploads draft to Chrome Web Store API |
-| `bun run deploy:firefox` | Compiles, validates, and submits signed add-on to Mozilla AMO |
+| Command                  | Description                                                                      |
+| :----------------------- | :------------------------------------------------------------------------------- |
+| `bun dev`                | Starts Vite dev server and auto-launches **Brave Browser** with extension loaded |
+| `bun run dev:brave`      | Starts Vite dev server explicitly targeting **Brave Browser**                    |
+| `bun run dev:firefox`    | Starts Vite dev server explicitly targeting **Mozilla Firefox**                  |
+| `bun run dev:chrome`     | Starts Vite dev server explicitly targeting **Google Chrome**                    |
+| `bun test`               | Runs the full unit and integration test suite with coverage validation           |
+| `bun run build:chrome`   | Compiles production bundle for Google Chrome (Manifest V3)                       |
+| `bun run build:firefox`  | Compiles production bundle for Mozilla Firefox (Manifest V3)                     |
+| `bun run zip:all`        | Compiles and packages both `v*_chrome.zip` and `v*_firefox.zip`                  |
+| `bun run zip:chrome`     | Compiles and packages Chrome extension zip bundle                                |
+| `bun run zip:firefox`    | Compiles and packages Firefox add-on zip bundle                                  |
+| `bun run lint:firefox`   | Validates Firefox bundle with Mozilla's `web-ext lint`                           |
+| `bun run deploy:chrome`  | Compiles, packages, and uploads draft to Chrome Web Store API                    |
+| `bun run deploy:firefox` | Compiles, validates, and submits signed add-on to Mozilla AMO                    |
 
 ---
 
