@@ -56,6 +56,23 @@ jobs:
           bunx web-ext lint --source-dir=dist --warnings-as-errors
           echo "✅ Source code verified successfully. Clean reproducible build confirmed."
 
+      - name: Validate AMO API Credentials
+        env:
+          AMO_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          if [ -z "$AMO_ISSUER" ]; then
+            echo "::error::Secret AMO_JWT_ISSUER is missing or empty in GitHub Secrets. Please add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [ -z "$AMO_SECRET" ]; then
+            echo "::error::Secret AMO_JWT_SECRET is missing or empty in GitHub Secrets. Please add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [[ ! "$AMO_ISSUER" =~ ^user: ]]; then
+            echo "::warning::AMO_JWT_ISSUER does not start with 'user:'. In Mozilla Add-ons (AMO), the JWT issuer usually looks like 'user:12345678:999'. Please verify you copied the 'JWT issuer' (Key) and not an email, username, or extension ID."
+          fi
+
       - name: Package extension for AMO
         id: web-ext-build
         uses: kewisch/action-web-ext@v2

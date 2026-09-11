@@ -16,13 +16,25 @@ import { ExtensionMessage } from "../shared/messages";
 const log = createLogger("RecorderService");
 
 const MP4_MIME_CANDIDATES = [
-  "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  // High Profile Level 5.1 (4K @ 60fps, 8x8 DCT, CABAC)
+  "video/mp4;codecs=avc1.640033,mp4a.40.2",
+  "video/mp4;codecs=avc1.640033",
+  // High Profile Level 4.2 (1080p @ 60fps, 8x8 DCT, CABAC)
+  "video/mp4;codecs=avc1.64002a,mp4a.40.2",
+  "video/mp4;codecs=avc1.64002a",
+  // Main Profile Level 4.2 (Universal 1080p60)
+  "video/mp4;codecs=avc1.4d402a,mp4a.40.2",
+  "video/mp4;codecs=avc1.4d402a",
+  // Generic AVC1 / H.264 (Allows browser hardware encoder to negotiate optimal profile)
   "video/mp4;codecs=avc1,mp4a.40.2",
   "video/mp4;codecs=avc1,opus",
   "video/mp4;codecs=avc1",
   "video/mp4;codecs=h264,opus",
   "video/mp4;codecs=h264",
   "video/mp4",
+  // Baseline Profile Level 3.0 as final legacy fallback
+  "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  "video/mp4;codecs=avc1.42E01E",
 ];
 
 const WEBM_MIME_CANDIDATES = [
@@ -30,6 +42,7 @@ const WEBM_MIME_CANDIDATES = [
   "video/webm;codecs=vp8,opus",
   "video/webm;codecs=vp9",
   "video/webm;codecs=vp8",
+  "video/webm;codecs=av1,opus",
   "video/webm",
 ];
 
@@ -208,19 +221,22 @@ export class RecorderService {
     this.setState("REQUESTING_PERMISSION");
     this.recordedChunks = [];
 
-    // Map quality preset or custom bitrate (default: 8 Mbps high definition)
+    // Map quality preset or custom bitrate (ensuring high motion screen recordings avoid macroblocking)
     let videoBitsPerSecond = options.videoBitsPerSecond;
     if (!videoBitsPerSecond) {
       if (options.quality === "ultra") {
-        videoBitsPerSecond = 16_000_000; // 16 Mbps for 4K / Ultra HD
+        videoBitsPerSecond = 24_000_000; // 24 Mbps for 4K / Ultra HD
       } else if (options.quality === "standard") {
-        videoBitsPerSecond = 4_000_000; // 4 Mbps
+        videoBitsPerSecond = 6_000_000; // 6 Mbps for 720p
       } else {
-        videoBitsPerSecond = 8_000_000; // 8 Mbps High Definition default
+        videoBitsPerSecond = 12_000_000; // 12 Mbps for 1080p High Definition (prevents artifacts during fast motion)
       }
     }
 
     const frameRate = options.frameRate ?? (options.quality === "standard" ? 30 : 60);
+    const isUltra = options.quality === "ultra";
+    const idealWidth = isUltra ? 3840 : 1920;
+    const idealHeight = isUltra ? 2160 : 1080;
 
     try {
       // Prompt native screen-sharing picker with high-fidelity constraints
@@ -228,8 +244,8 @@ export class RecorderService {
         video: {
           displaySurface: "monitor",
           frameRate: { ideal: frameRate, max: frameRate },
-          width: { ideal: 1920, max: 3840 },
-          height: { ideal: 1080, max: 2160 },
+          width: { ideal: idealWidth, max: 3840 },
+          height: { ideal: idealHeight, max: 2160 },
         },
         audio: options.audio ?? true,
       });
@@ -292,6 +308,16 @@ export class RecorderService {
       // Handle user manually clicking browser's native "Stop sharing" button
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
+        // Enforce fluid motion rendering: prevents browsers from downclocking framerate or
+        // producing decoding glitches and macroblock tearing when screen content moves quickly
+        if ("contentHint" in videoTrack) {
+          try {
+            videoTrack.contentHint = "motion";
+          } catch {
+            // Ignore in unsupported environments
+          }
+        }
+
         videoTrack.addEventListener("ended", () => {
           // If still recording when track ends, cleanly stop and finalize
           if (this.state === "RECORDING" || this.state === "PAUSED") {
@@ -304,7 +330,7 @@ export class RecorderService {
       const recorder = new MediaRecorder(finalStream, {
         mimeType,
         videoBitsPerSecond,
-        audioBitsPerSecond: options.audioBitsPerSecond ?? 128_000,
+        audioBitsPerSecond: options.audioBitsPerSecond ?? 192_000,
       });
       this.mediaRecorder = recorder;
 

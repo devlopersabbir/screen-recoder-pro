@@ -26,18 +26,18 @@ export interface QualityPreset {
 
 export const QUALITY_PRESETS: Record<VideoQuality, QualityPreset> = {
   standard: {
-    label: "720p (4 Mbps)",
-    bitrate: 4_000_000,
+    label: "720p (6 Mbps)",
+    bitrate: 6_000_000,
     description: "Compact file size",
   },
   high: {
-    label: "1080p (8 Mbps)",
-    bitrate: 8_000_000,
+    label: "1080p (12 Mbps)",
+    bitrate: 12_000_000,
     description: "Crisp HD (Recommended)",
   },
   ultra: {
-    label: "4K (16 Mbps)",
-    bitrate: 16_000_000,
+    label: "4K (24 Mbps)",
+    bitrate: 24_000_000,
     description: "Ultra fidelity",
   },
 };
@@ -68,13 +68,20 @@ export function checkFormatSupport(format: VideoFormat): boolean {
 
   if (format === "mp4") {
     const candidates = [
-      "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+      "video/mp4;codecs=avc1.640033,mp4a.40.2",
+      "video/mp4;codecs=avc1.640033",
+      "video/mp4;codecs=avc1.64002a,mp4a.40.2",
+      "video/mp4;codecs=avc1.64002a",
+      "video/mp4;codecs=avc1.4d402a,mp4a.40.2",
+      "video/mp4;codecs=avc1.4d402a",
       "video/mp4;codecs=avc1,mp4a.40.2",
       "video/mp4;codecs=avc1,opus",
       "video/mp4;codecs=avc1",
       "video/mp4;codecs=h264,opus",
       "video/mp4;codecs=h264",
       "video/mp4",
+      "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+      "video/mp4;codecs=avc1.42E01E",
     ];
     return candidates.some((candidate) => MediaRecorder.isTypeSupported(candidate));
   }
@@ -84,6 +91,7 @@ export function checkFormatSupport(format: VideoFormat): boolean {
     "video/webm;codecs=vp8,opus",
     "video/webm;codecs=vp9",
     "video/webm;codecs=vp8",
+    "video/webm;codecs=av1,opus",
     "video/webm",
   ];
   return webmCandidates.some((candidate) => MediaRecorder.isTypeSupported(candidate));

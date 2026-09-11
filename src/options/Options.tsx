@@ -405,10 +405,10 @@ export const Options: React.FC = () => {
                 </div>
                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
                   {settings.quality === "ultra"
-                    ? "4K UHD • 16 Mbps bitrate (Maximum clarity)"
+                    ? "4K UHD • 24 Mbps bitrate (Maximum clarity)"
                     : settings.quality === "high"
-                    ? "1080p Full HD • 8 Mbps bitrate (Recommended)"
-                    : "720p HD • 4 Mbps bitrate (Compact size)"}
+                    ? "1080p Full HD • 12 Mbps bitrate (Recommended)"
+                    : "720p HD • 6 Mbps bitrate (Compact size)"}
                 </div>
               </div>
 

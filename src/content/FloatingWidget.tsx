@@ -6,7 +6,7 @@ import {
   ExtensionMessage,
   StateUpdateMessage,
 } from "../shared/messages";
-import { DEFAULT_SETTINGS, getSettings, RecorderSettings } from "../utils/settings";
+import { DEFAULT_SETTINGS, getSettings, QUALITY_PRESETS, RecorderSettings } from "../utils/settings";
 
 export interface FloatingWidgetProps {
   initialState?: RecordingState;
@@ -201,6 +201,7 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     startRecording({
       format: currentSettings.format,
       quality: currentSettings.quality,
+      videoBitsPerSecond: QUALITY_PRESETS[currentSettings.quality]?.bitrate,
       frameRate: currentSettings.frameRate,
       audio: currentSettings.systemAudio ?? currentSettings.audio,
       micAudio: currentSettings.micAudio,
