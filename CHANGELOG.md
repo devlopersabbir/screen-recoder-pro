@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/devlopersabbir/screen-recoder-pro/compare/v1.1.0...v1.1.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* configure background script entry point for Firefox compatibility ([93d88ce](https://github.com/devlopersabbir/screen-recoder-pro/commit/93d88ce78fbcca2623839f8ba47748b1e24baff1))
+
 # [1.1.0](https://github.com/devlopersabbir/screen-recoder-pro/compare/v1.0.0...v1.1.0) (2026-09-11)
 
 
