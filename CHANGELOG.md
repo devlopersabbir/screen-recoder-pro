@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/devlopersabbir/screen-recoder-pro/compare/v1.0.0...v1.1.0) (2026-09-11)
+
+
+### Features
+
+* implement core screen recording functionality with background service, content widget, and settings UI ([990f3ca](https://github.com/devlopersabbir/screen-recoder-pro/commit/990f3ca6a39d416b8fb338ad4cb5bfd2f47f0d8e))
+* implement core screen recording functionality with floating widget and service layer ([61b052b](https://github.com/devlopersabbir/screen-recoder-pro/commit/61b052b0f7e96d65c7556dfd0f939679a2ed0c7d))
+* implement recording service, download utilities, and options page UI with device management ([e9f92a9](https://github.com/devlopersabbir/screen-recoder-pro/commit/e9f92a9bbaac3d81bfaf7b6badc57263a137258a))
+
 # 1.0.0 (2026-09-10)
 
 
