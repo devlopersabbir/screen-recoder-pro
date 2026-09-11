@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/devlopersabbir/screen-recoder-pro/compare/v1.1.3...v1.2.0) (2026-09-11)
+
+
+### Features
+
+* add asset generation scripts and updated branding icons and screenshots ([3fb268b](https://github.com/devlopersabbir/screen-recoder-pro/commit/3fb268b91e319ac90c159cc2a38eff85fdd9d38f))
+
 ## [1.1.3](https://github.com/devlopersabbir/screen-recoder-pro/compare/v1.1.2...v1.1.3) (2026-09-11)
 
 
