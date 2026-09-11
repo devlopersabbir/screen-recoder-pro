@@ -2,7 +2,7 @@
   "name": "screen-recorder-pro",
   "displayName": "Screen Recorder Pro",
   "description": "Simple, private, local-first screen recorder. Record your entire screen, window, or tab offline with zero uploads or watermarks.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": false,
   "type": "module",
   "license": "MIT",
