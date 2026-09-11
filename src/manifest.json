@@ -1,25 +1,29 @@
 {
+  "manifest_version": 3,
   "name": "Screen Recorder Pro",
   "description": "Simple, private, local-first screen recorder. Record your entire screen, window, or tab offline with zero uploads or watermarks.",
   "version_name": "0.0.1",
-  "{{chrome}}.manifest_version": 3,
-  "{{firefox}}.manifest_version": 2,
   "icons": {
-    "16": "icon/16.png",
-    "32": "icon/32.png",
-    "48": "icon/48.png",
-    "96": "icon/96.png",
-    "128": "icon/128.png"
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
-  "{{chrome}}.action": {
-    "default_popup": "src/popup/index.html"
-  },
-  "{{firefox}}.browser_action": {
-    "default_popup": "src/popup/index.html"
+  "action": {},
+  "options_ui": {
+    "page": "src/options/index.html",
+    "open_in_tab": true
   },
   "background": {
-    "{{chrome}}.service_worker": "src/background/index.ts",
-    "{{firefox}}.scripts": ["src/background/index.ts"]
+    "service_worker": "src/background/index.ts",
+    "type": "module"
   },
-  "permissions": []
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/content/index.tsx"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab", "scripting"]
 }

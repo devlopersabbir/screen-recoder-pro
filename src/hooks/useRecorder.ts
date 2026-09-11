@@ -17,6 +17,18 @@ export function useRecorder() {
     recorderService.stopRecording();
   }, []);
 
+  const pauseRecording = useCallback(() => {
+    recorderService.pauseRecording();
+  }, []);
+
+  const resumeRecording = useCallback(() => {
+    recorderService.resumeRecording();
+  }, []);
+
+  const cancelRecording = useCallback(() => {
+    recorderService.cancelRecording();
+  }, []);
+
   const downloadRecording = useCallback(() => {
     if (result) {
       downloadBlob(result.blob, result.filename);
@@ -35,8 +47,12 @@ export function useRecorder() {
     result,
     error,
     startRecording,
+    pauseRecording,
+    resumeRecording,
+    cancelRecording,
     stopRecording,
     downloadRecording,
     resetRecording,
+    getStartTime: recorderService.getStartTime,
   };
 }

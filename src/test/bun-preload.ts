@@ -30,6 +30,24 @@ if (!globalThis.URL.revokeObjectURL) {
   globalThis.URL.revokeObjectURL = () => {};
 }
 
+if (!(globalThis as any).chrome) {
+  (globalThis as any).chrome = {
+    runtime: {
+      id: "screen-recorder-pro-mock-extension-id",
+      sendMessage: () => Promise.resolve(),
+      onMessage: {
+        addListener: () => {},
+        removeListener: () => {},
+        hasListener: () => false,
+      },
+    },
+    tabs: {
+      query: () => Promise.resolve([]),
+      sendMessage: () => Promise.resolve(),
+    },
+  };
+}
+
 // @ts-ignore
 import { afterEach, expect } from "bun:test";
 import * as matchers from "@testing-library/jest-dom/matchers";

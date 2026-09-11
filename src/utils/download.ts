@@ -22,11 +22,16 @@ export function downloadBlob(blob: Blob, filename: string): void {
   anchor.href = url;
   anchor.download = filename;
   anchor.style.display = "none";
-  document.body.appendChild(anchor);
+  const target = document.body || document.documentElement;
+  if (target) {
+    target.appendChild(anchor);
+  }
   anchor.click();
 
   setTimeout(() => {
-    document.body.removeChild(anchor);
+    if (anchor.parentNode) {
+      anchor.parentNode.removeChild(anchor);
+    }
     URL.revokeObjectURL(url);
   }, 1000);
 }

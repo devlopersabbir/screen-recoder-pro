@@ -85,10 +85,10 @@ function generateManifest() {
 
   const cleanManifestVersion = pkg.version.split("-")[0].split("+")[0];
 
-  const background =
-    targetBrowser === "firefox"
-      ? { scripts: ["src/background/index.ts"] }
-      : { service_worker: "src/background/index.ts" };
+  const background = {
+    service_worker: "src/background/index.ts",
+    type: "module",
+  };
 
   const browserSpecificSettings =
     targetBrowser === "firefox"
@@ -112,17 +112,25 @@ function generateManifest() {
     version: cleanManifestVersion,
     homepage_url: "https://github.com/devlopersabbir/screen-recoder-pro",
     icons: {
-      "16": "icon/16.png",
-      "32": "icon/32.png",
-      "48": "icon/48.png",
-      "96": "icon/96.png",
-      "128": "icon/128.png",
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png",
     },
-    action: {
-      default_popup: "src/popup/index.html",
+    action: {},
+    options_ui: {
+      page: "src/options/index.html",
+      open_in_tab: true,
     },
     background,
-    permissions: [],
+    content_scripts: [
+      {
+        matches: ["http://*/*", "https://*/*"],
+        js: ["src/content/index.tsx"],
+        run_at: "document_idle",
+      },
+    ],
+    permissions: ["activeTab", "scripting"],
     ...(targetBrowser === "chrome" ? { minimum_chrome_version: "116.0" } : {}),
     ...(browserSpecificSettings
       ? { browser_specific_settings: browserSpecificSettings }
@@ -220,8 +228,12 @@ export default defineConfig({
       webExtConfig: {
         target: targetBrowser === "firefox" ? "firefox-desktop" : "chromium",
         ...(targetBrowser === "firefox"
-          ? (findFirefoxBinary() ? { firefoxBinary: findFirefoxBinary() } : {})
-          : (findChromiumBinary(rawTarget) ? { chromiumBinary: findChromiumBinary(rawTarget) } : {})),
+          ? findFirefoxBinary()
+            ? { firefoxBinary: findFirefoxBinary() }
+            : {}
+          : findChromiumBinary(rawTarget)
+            ? { chromiumBinary: findChromiumBinary(rawTarget) }
+            : {}),
       },
       // Automatically launch browser in dev mode (unless AUTO_LAUNCH=false is explicitly set)
       disableAutoLaunch: process.env.AUTO_LAUNCH === "false",

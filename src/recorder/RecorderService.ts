@@ -1,3 +1,4 @@
+import Browser from "webextension-polyfill";
 import {
   CompleteListener,
   ErrorListener,
@@ -10,6 +11,7 @@ import {
 } from "./types";
 import { generateFilename } from "../utils/download";
 import { createLogger } from "../utils/logger";
+import { ExtensionMessage } from "../shared/messages";
 
 const log = createLogger("RecorderService");
 
@@ -39,6 +41,50 @@ export class RecorderService {
   private stateListeners: Set<StateChangeListener> = new Set();
   private errorListeners: Set<ErrorListener> = new Set();
   private completeListeners: Set<CompleteListener> = new Set();
+
+  constructor() {
+    this.initMessageListener();
+  }
+
+  private initMessageListener(): void {
+    try {
+      if (typeof Browser !== "undefined" && Browser.runtime?.onMessage) {
+        Browser.runtime.onMessage.addListener((msg: unknown) => {
+          const message = msg as ExtensionMessage;
+          if (!message || typeof message !== "object") return;
+          if (message.type === "SRP_STOP_RECORDING") {
+            this.stopRecording();
+          } else if (message.type === "SRP_PAUSE_RECORDING") {
+            this.pauseRecording();
+          } else if (message.type === "SRP_RESUME_RECORDING") {
+            this.resumeRecording();
+          } else if (message.type === "SRP_CANCEL_RECORDING") {
+            this.cancelRecording();
+          }
+        });
+      }
+    } catch {
+      // ignore in tests or when Browser is not initialized
+    }
+  }
+
+  private broadcastState(newState: RecordingState): void {
+    try {
+      if (typeof Browser !== "undefined" && Browser.runtime?.sendMessage) {
+        Browser.runtime
+          .sendMessage({
+            type: "SRP_STATE_UPDATE",
+            state: newState,
+            isPaused: newState === "PAUSED",
+            startedAt: this.startTime,
+            durationMs: this.startTime ? Date.now() - this.startTime : 0,
+          })
+          .catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   public getSnapshot = (): RecorderSnapshot => {
     return this.snapshot;
@@ -78,6 +124,7 @@ export class RecorderService {
     };
     this.snapshotListeners.forEach((l) => l());
     this.stateListeners.forEach((listener) => listener(newState));
+    this.broadcastState(newState);
   }
 
   private emitError(code: RecorderError["code"], message: string): void {
@@ -220,13 +267,71 @@ export class RecorderService {
     // Stop recorder which triggers onstop
     if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
       try {
+        if (typeof this.mediaRecorder.requestData === "function") {
+          try {
+            this.mediaRecorder.requestData();
+          } catch {
+            // ignore if not supported in test environment
+          }
+        }
         this.mediaRecorder.stop();
       } catch (e) {
-        console.warn("Failed to stop MediaRecorder cleanly", e);
+        log.warn("Failed to stop MediaRecorder cleanly, forcing finalization", e);
+        this.finalizeRecording();
       }
     } else {
       this.finalizeRecording();
     }
+  }
+
+  /**
+   * Pauses an active recording session.
+   */
+  public pauseRecording(): void {
+    if (this.state !== "RECORDING" || !this.mediaRecorder) {
+      return;
+    }
+    if (this.mediaRecorder.state === "recording") {
+      try {
+        this.mediaRecorder.pause();
+      } catch (e) {
+        log.warn("Failed to pause MediaRecorder", e);
+      }
+    }
+    this.setState("PAUSED");
+  }
+
+  /**
+   * Resumes a paused recording session.
+   */
+  public resumeRecording(): void {
+    if (this.state !== "PAUSED" || !this.mediaRecorder) {
+      return;
+    }
+    if (this.mediaRecorder.state === "paused") {
+      try {
+        this.mediaRecorder.resume();
+      } catch (e) {
+        log.warn("Failed to resume MediaRecorder", e);
+      }
+    }
+    this.setState("RECORDING");
+  }
+
+  /**
+   * Cancels and discards the active recording session without saving.
+   */
+  public cancelRecording(): void {
+    if (this.state !== "RECORDING" && this.state !== "PAUSED") {
+      return;
+    }
+    this.cleanup();
+    this.recordedChunks = [];
+    this.setState("IDLE");
+  }
+
+  public getStartTime(): number {
+    return this.startTime;
   }
 
   /**
