@@ -13,7 +13,7 @@ Complete copy-paste metadata, descriptions, reviewer justifications, and asset g
 | **Primary Category** | `Productivity` | `Photos, Music & Videos` | `Productivity` |
 | **Secondary Category** | `Workflow & Planning` | `Feeds, News & Blogging` | `Developer Tools` |
 | **Pricing** | Free (No In-App Purchases) | Free (No In-App Purchases) | Free (No In-App Purchases) |
-| **Current Version** | `1.1.3` | `1.1.3` | `1.1.3` |
+| **Current Version** | `1.2.1` | `1.2.1` | `1.2.1` |
 | **Support Email** | `devlopersabbir@gmail.com` | `devlopersabbir@gmail.com` | `devlopersabbir@gmail.com` |
 | **Developer / Author** | `Sabbir Hossain Shuvo` | `Sabbir Hossain Shuvo` | `Sabbir Hossain Shuvo` |
 | **Repository** | `https://github.com/devlopersabbir/screen-recoder-pro` | `https://github.com/devlopersabbir/screen-recoder-pro` | `https://github.com/devlopersabbir/screen-recoder-pro` |
@@ -46,82 +46,46 @@ Complete copy-paste metadata, descriptions, reviewer justifications, and asset g
 
 ## 📜 Full Descriptions
 
-### Option A: Chrome Web Store & Edge Format (Plain Text with Unicode Formatting)
+### Option A: Chrome Web Store & Edge Format (Plain Text)
 > *Copy and paste this directly into the Chrome Web Store Developer Dashboard and Microsoft Edge Partner Center.*
 
 ```text
 Screen Recorder Pro is a lightweight, reliable, and 100% local-first screen recorder extension for your browser.
 
-Record your entire desktop, a specific application window, or an individual browser tab with crystal-clear quality — completely offline, with zero uploads, no watermarks, and no sign-up required.
+Record your entire screen, an application window, or an individual browser tab with high quality — completely offline, with zero uploads, no watermarks, and no sign-up required.
 
-Unlike heavy online recording tools that force you to upload private video feeds to third-party cloud servers, Screen Recorder Pro encodes and saves everything directly on your machine. Your private data never leaves your device.
+All video encoding happens directly on your machine. Your recordings are processed in-memory and saved directly to your device without sending any data to external cloud servers.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ KEY FEATURES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FEATURES
 
-🖥️ Flexible Capture Modes
-Record your full desktop, any running application window, or a single browser tab using the browser's native, secure screen-picker dialog.
+• Flexible Screen Capture: Record your full desktop, any running application window, or a single browser tab using the browser's native screen picker.
+• 100% Private & Local: No cloud uploads, no account creation, no tracking, and zero telemetry.
+• Floating On-Screen Controls: Manage your recordings with an on-page floating toolbar featuring a recording timer, audio visualizer, pause/resume, and stop buttons.
+• Audio Capture: Record microphone narration and system audio simultaneously or independently, with live microphone volume level testing.
+• Multi-Format & Quality Options: Choose universal MP4 (H.264) or open WebM (VP9/Opus), with customizable resolutions (720p, 1080p, 4K UHD) and frame rates (30 or 60 FPS).
+• Organized Local Downloads: Save videos automatically to your Downloads folder or pre-configured subfolders with clean timestamps, or enable save location prompts.
+• Native Stop Detection: Cleanly finalizes and saves your video file when clicking the browser's native "Stop sharing" bar.
+• No Watermarks or Limits: Record without forced branding, logos, or artificial duration caps.
+• Zero Background Footprint: Built to stay completely idle with 0% CPU and memory overhead when you are not actively recording.
 
-🔒 100% Private & Local-First
-No cloud uploads, no account creation, no tracking, and zero telemetry. All video encoding happens in-memory on your machine, saving directly to your computer.
+HOW TO USE
 
-🎛️ Floating On-Screen Widget
-Control your recordings without switching tabs. Features an unobtrusive floating widget with a live recording timer, audio visualizer, pause/resume, and stop controls.
-
-🎙️ Dual Audio & Device Routing
-• Record microphone narration and system audio simultaneously or independently.
-• Select specific microphone and audio output hardware with live volume level testing and sound chime verification.
-
-🎬 Multi-Format & Quality Presets
-• Output Formats: Universal MP4 (H.264 / AVC) or Open WebM (VP9 / Opus).
-• Resolution Presets: 4K UHD (24 Mbps), 1080p Full HD (12 Mbps), or 720p HD (6 Mbps).
-• Frame Rates: Ultra-smooth 60 FPS or standard 30 FPS.
-
-📁 Smart Local Downloads & Subfolder Organization
-Save videos automatically to your Downloads folder or pre-configured subfolders (e.g. Downloads/ScreenRecordings or Downloads/Videos) with organized timestamps, or enable "Ask Save Location" for a file picker prompt.
-
-⏹️ Smart "Stop Sharing" Detection
-Never worry about frozen or hanging recordings. Clicking the native browser "Stop sharing" bar cleanly and automatically finalizes your video file.
-
-🚫 Zero Watermarks & No Time Limits
-Your content is 100% yours. Record as long as your hardware allows without arbitrary duration limits, forced brand watermarks, or premium paywalls.
-
-⚡ Ultra-Lightweight & Fast
-Built without bloatware. Screen Recorder Pro stays idle and uses zero CPU or memory when you are not recording.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 PERFECT FOR
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-• 💻 Developers: Record software bugs, reproduce issues, and create pull request walkthroughs.
-• 🎓 Teachers & Students: Record lectures, tutorials, student presentations, and research sessions.
-• 👥 Remote Teams: Share asynchronous updates, demo prototypes, and document team workflows.
-• 🎮 Creators & Gamers: Capture gameplay highlights, web tutorials, and app reviews.
-• 📋 QA Engineers: Create reproducible bug reports with timestamped video evidence.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 HOW TO USE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. Click the Screen Recorder Pro icon in your browser toolbar (or use the floating widget).
+1. Click the Screen Recorder Pro icon in your browser toolbar.
 2. Click "Start Recording".
 3. Select whether to share your Entire Screen, a Window, or a Tab (with optional System Audio).
 4. Pause or resume at any time using the on-screen widget.
 5. Click "Stop Recording" (or click "Stop sharing" on the browser bar).
 6. Your video file is saved automatically to your local Downloads folder.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛡️ PRIVACY & PERMISSIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRIVACY & PERMISSIONS
 
-Screen Recorder Pro requests only the absolute minimum permissions required for local screen recording:
+Screen Recorder Pro requests only permissions essential for local recording functionality:
 
-• Screen Capture: Triggered strictly via navigator.mediaDevices.getDisplayMedia. Capture only begins after you explicitly choose what to share.
-• Local Storage: Saves your preferred settings (quality, format, audio devices, subfolder) locally in your browser.
+• Screen Capture: Uses navigator.mediaDevices.getDisplayMedia. Recording begins strictly after you select what to share in the browser dialog.
+• Microphone: Captures narration audio only when you explicitly enable microphone recording.
 • Downloads: Saves the generated video file directly to your local computer.
-• Zero Telemetry: No analytics, tracking beacons, or third-party cookies exist in this extension.
-• 100% Offline: Works completely without an active internet connection after installation.
+• Storage: Saves your format, quality, and audio preferences locally in your browser.
+• Offline: Functions entirely without an internet connection.
 • Open Source: Fully auditable, transparent code hosted on GitHub: https://github.com/devlopersabbir/screen-recoder-pro
 ```
 
@@ -133,28 +97,21 @@ Screen Recorder Pro requests only the absolute minimum permissions required for 
 ```markdown
 **Screen Recorder Pro** is a lightweight, reliable, and **100% local-first** screen recorder extension for Mozilla Firefox.
 
-Record your entire desktop, a specific application window, or an individual browser tab with crystal-clear quality — completely offline, with zero uploads, no watermarks, and no sign-up required.
+Record your entire desktop, a specific application window, or an individual browser tab with high quality — completely offline, with zero uploads, no watermarks, and no sign-up required.
 
-Unlike heavy online recording tools that force you to upload private video feeds to third-party cloud servers, Screen Recorder Pro encodes and saves everything directly on your machine. Your private data never leaves your computer.
+All video encoding happens directly on your machine. Your recordings are processed in-memory and saved directly to your device without sending any data to external cloud servers.
 
 ### ✨ Key Features
 
-* 🖥️ **Flexible Capture Modes**: Record your full desktop, any running application window, or a single browser tab using the browser's native, secure screen-picker dialog.
+* 🖥️ **Flexible Capture Modes**: Record your full desktop, any running application window, or a single browser tab using the browser's native screen-picker dialog.
 * 🔒 **100% Private & Local-First**: No cloud uploads, no account creation, no tracking, and zero telemetry. All video encoding happens in-memory on your machine.
 * 🎛️ **Floating Widget UI**: Unobtrusive on-page toolbar with live recording timer, audio visualizer, pause/resume, and stop controls.
-* 🎙️ **Dual Audio Capture**: Record your microphone narration and system audio together or separately, with live mic level meter testing.
+* 🎙️ **Audio Capture**: Record microphone narration and system audio together or separately, with live microphone level meter testing.
 * 🎬 **Multi-Format & Quality**: Choose between MP4 (H.264) and WebM (VP9/Opus), resolutions from 720p to 4K UHD, and 30 or 60 FPS.
 * 💾 **Organized Local Downloads**: Save videos automatically into timestamped subfolders (`Downloads/ScreenRecordings/`) or prompt save location.
-* ⏹️ **Smart "Stop Sharing" Detection**: Automatically finalizes and saves the recording cleanly if the native browser sharing bar is clicked.
-* 🚫 **Zero Watermarks & No Time Limits**: Record as long as your hardware permits without forced branding or arbitrary time caps.
-* ⚡ **Ultra-Lightweight**: Built without bloatware. Idles at 0% CPU and zero memory overhead when not actively recording.
-
-### 🎯 Who is Screen Recorder Pro for?
-
-* **Developers**: Record software bugs, reproduce issues, and create pull request walkthroughs.
-* **Educators & Students**: Record lectures, coding tutorials, presentations, and study guides.
-* **Remote Workers**: Send quick visual updates and asynchronous demo walkthroughs to teammates.
-* **Content Creators**: Capture high-framerate web demos, software guides, and presentations.
+* ⏹️ **Native Stop Detection**: Cleanly finalizes and saves your video file when clicking the browser's native "Stop sharing" bar.
+* 🚫 **No Watermarks & No Time Limits**: Record without forced branding, logos, or artificial duration caps.
+* ⚡ **Zero Idle Footprint**: Built without bloatware. Idles at 0% CPU and zero memory overhead when not actively recording.
 
 ### 🚀 How to Use
 
@@ -294,13 +251,14 @@ When preparing promotional store assets (Recommended resolutions: 1280x800px or 
 
 ---
 
-## 🏷️ Search Engine Optimization (SEO) & Search Keywords
+## 🛡️ Chrome Web Store Policy Compliance & Metadata Guidelines
 
-Copy these keywords into your store developer console search tag fields:
-
-```text
-screen recorder, screen capture, record screen, screen video recorder, tab recorder, window capture, local screen recorder, offline screen recorder, video capture, no watermark, screen recording, desktop recorder, mp4 recorder, 4k screen recorder, 60fps screen recorder, mic recorder, system audio recorder, productivity, developer tools
-```
+> [!IMPORTANT]
+> **Zero Keyword Stuffing Policy (Violation Reference: Yellow Argon)**
+> Chrome Web Store strictly bans keyword lists, tag stuffing, and unnatural repetition in extension descriptions and metadata.
+> - **DO NOT** paste comma-separated keyword lists or tags into the description.
+> - **DO NOT** add "target audience" or "perfect for" sections listing various professions (e.g. developers, students, gamers).
+> - Keep the description natural, accurate, and focused strictly on the extension's core features.
 
 ---
 
