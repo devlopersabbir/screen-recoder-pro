@@ -10,6 +10,7 @@ import {
   StateChangeListener,
 } from "./types";
 import { generateFilename } from "../utils/download";
+import { fixMediaDuration } from "../utils/mediaFixer";
 import { createLogger } from "../utils/logger";
 import { ExtensionMessage } from "../shared/messages";
 
@@ -58,6 +59,26 @@ export class RecorderService {
   private startTime: number = 0;
   private selectedMimeType: string = "";
   private filenamePrefix: string = "screen-recording";
+  private isMicMutedState: boolean = false;
+
+  public setMicMuted(muted: boolean): boolean {
+    if (!this.micStream) return false;
+    const tracks = this.micStream.getAudioTracks();
+    if (tracks.length === 0) return false;
+    tracks.forEach((track) => {
+      track.enabled = !muted;
+    });
+    this.isMicMutedState = muted;
+    return true;
+  }
+
+  public isMicMuted(): boolean {
+    return this.isMicMutedState;
+  }
+
+  public hasMic(): boolean {
+    return Boolean(this.micStream && this.micStream.getAudioTracks().length > 0);
+  }
 
   private snapshot: RecorderSnapshot = {
     state: "IDLE",
@@ -239,16 +260,41 @@ export class RecorderService {
     const idealHeight = isUltra ? 2160 : 1080;
 
     try {
-      // Prompt native screen-sharing picker with high-fidelity constraints
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          displaySurface: "monitor",
-          frameRate: { ideal: frameRate, max: frameRate },
-          width: { ideal: idealWidth, max: 3840 },
-          height: { ideal: idealHeight, max: 2160 },
-        },
-        audio: options.audio ?? true,
-      });
+      let stream: MediaStream;
+
+      if (options.streamId) {
+        // Capture stream using desktopCapture streamId (ideal for background/offscreen recording)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            mandatory: {
+              chromeMediaSource: "desktop",
+              chromeMediaSourceId: options.streamId,
+              maxFrameRate: frameRate,
+              maxWidth: idealWidth,
+              maxHeight: idealHeight,
+            },
+          } as any,
+          audio: options.audio
+            ? ({
+                mandatory: {
+                  chromeMediaSource: "desktop",
+                  chromeMediaSourceId: options.streamId,
+                },
+              } as any)
+            : false,
+        });
+      } else {
+        // Prompt native screen-sharing picker with high-fidelity constraints
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            displaySurface: "monitor",
+            frameRate: { ideal: frameRate, max: frameRate },
+            width: { ideal: idealWidth, max: 3840 },
+            height: { ideal: idealHeight, max: 2160 },
+          },
+          audio: options.audio ?? true,
+        });
+      }
 
       this.mediaStream = stream;
       this.filenamePrefix = options.filenamePrefix || "screen-recording";
@@ -265,10 +311,11 @@ export class RecorderService {
           try {
             mic = await navigator.mediaDevices.getUserMedia({
               audio: {
-                deviceId: targetDeviceId ? { ideal: targetDeviceId } : undefined,
+                deviceId: targetDeviceId ? { exact: targetDeviceId } : undefined,
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
+                sampleRate: 48000,
               },
             });
           } catch (micErr) {
@@ -283,6 +330,9 @@ export class RecorderService {
           if (micTrack && sysTrack && typeof AudioContext !== "undefined") {
             const audioCtx = new AudioContext();
             this.audioContext = audioCtx;
+            if (audioCtx.state === "suspended") {
+              await audioCtx.resume();
+            }
             const dest = audioCtx.createMediaStreamDestination();
             const sysSource = audioCtx.createMediaStreamSource(new MediaStream([sysTrack]));
             const micSource = audioCtx.createMediaStreamSource(new MediaStream([micTrack]));
@@ -457,9 +507,9 @@ export class RecorderService {
   }
 
   /**
-   * Finalizes recording Blob, creates object URL, and notifies listeners.
+   * Finalizes recording Blob, repairs MP4/WebM duration headers, creates object URL, and notifies listeners.
    */
-  private finalizeRecording(): void {
+  private async finalizeRecording(): Promise<void> {
     const durationMs = Date.now() - this.startTime;
     const mimeType = this.selectedMimeType || "video/mp4";
 
@@ -473,12 +523,12 @@ export class RecorderService {
 
     const isMp4 = mimeType.toLowerCase().includes("mp4");
     const extension = isMp4 ? "mp4" : "webm";
-    const blob = new Blob(this.recordedChunks, { type: mimeType });
-    const url = URL.createObjectURL(blob);
+    const initialBlob = new Blob(this.recordedChunks, { type: mimeType });
+    const url = URL.createObjectURL(initialBlob);
     const filename = generateFilename(new Date(), extension, this.filenamePrefix);
 
     const result: RecordingResult = {
-      blob,
+      blob: initialBlob,
       url,
       mimeType,
       filename,
@@ -486,6 +536,18 @@ export class RecorderService {
     };
 
     this.emitComplete(result);
+
+    // Asynchronously patch container duration metadata so exported MP4/WebM is seekable
+    fixMediaDuration(initialBlob, durationMs, mimeType)
+      .then((patchedBlob) => {
+        if (patchedBlob && patchedBlob !== initialBlob) {
+          result.blob = patchedBlob;
+          if (this.snapshot.result) {
+            this.snapshot.result.blob = patchedBlob;
+          }
+        }
+      })
+      .catch(() => {});
   }
 
   private emitComplete(result: RecordingResult): void {

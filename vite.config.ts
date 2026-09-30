@@ -148,10 +148,18 @@ function generateManifest() {
         run_at: "document_idle",
       },
     ],
-    permissions: ["activeTab", "scripting", "storage", "downloads"],
+    permissions: [
+      "activeTab",
+      "scripting",
+      "storage",
+      "downloads",
+      "offscreen",
+      "desktopCapture",
+      "tabCapture",
+    ],
     web_accessible_resources: [
       {
-        resources: ["v1.png", "icons/*"],
+        resources: ["v1.png", "icons/*", "src/offscreen/*"],
         matches: ["<all_urls>"],
       },
     ],
@@ -249,6 +257,7 @@ export default defineConfig({
     webExtension({
       manifest: generateManifest,
       browser: targetBrowser,
+      additionalInputs: ["src/offscreen/index.html"],
       webExtConfig: {
         target: targetBrowser === "firefox" ? "firefox-desktop" : "chromium",
         ...(targetBrowser === "firefox"

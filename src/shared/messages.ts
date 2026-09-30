@@ -1,4 +1,4 @@
-import { RecordingState } from "../recorder/types";
+import { RecorderOptions, RecordingResult, RecordingState } from "../recorder/types";
 
 export type MessageType =
   | "SRP_START_RECORDING"
@@ -8,7 +8,8 @@ export type MessageType =
   | "SRP_CANCEL_RECORDING"
   | "SRP_STATE_UPDATE"
   | "SRP_GET_STATE"
-  | "SRP_TOGGLE_WIDGET";
+  | "SRP_TOGGLE_WIDGET"
+  | "SRP_TOGGLE_MIC";
 
 export interface BaseMessage {
   type: MessageType;
@@ -18,11 +19,14 @@ export interface ToggleWidgetMessage extends BaseMessage {
   type: "SRP_TOGGLE_WIDGET";
 }
 
+export interface ToggleMicMessage extends BaseMessage {
+  type: "SRP_TOGGLE_MIC";
+  muted?: boolean;
+}
+
 export interface StartRecordingMessage extends BaseMessage {
   type: "SRP_START_RECORDING";
-  options?: {
-    audio?: boolean;
-  };
+  options?: RecorderOptions;
 }
 
 export interface StopRecordingMessage extends BaseMessage {
@@ -51,6 +55,10 @@ export interface StateUpdateMessage extends BaseMessage {
   durationMs: number;
   isPaused: boolean;
   startedAt?: number;
+  isMicMuted?: boolean;
+  hasMic?: boolean;
+  result?: RecordingResult;
+  error?: string;
 }
 
 export type ExtensionMessage =
@@ -61,4 +69,5 @@ export type ExtensionMessage =
   | CancelRecordingMessage
   | GetStateMessage
   | StateUpdateMessage
-  | ToggleWidgetMessage;
+  | ToggleWidgetMessage
+  | ToggleMicMessage;

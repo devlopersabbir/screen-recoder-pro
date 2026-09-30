@@ -6,7 +6,7 @@ import {
   ExtensionMessage,
   StateUpdateMessage,
 } from "../shared/messages";
-import { DEFAULT_SETTINGS, getSettings, QUALITY_PRESETS, RecorderSettings } from "../utils/settings";
+import { DEFAULT_SETTINGS, getSettings, saveSettings, QUALITY_PRESETS, RecorderSettings } from "../utils/settings";
 
 export interface FloatingWidgetProps {
   initialState?: RecordingState;
@@ -53,11 +53,12 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     resetRecording,
   } = useRecorder();
 
-  // Support manual prop override for unit tests
+  // Support manual prop override for unit tests or background-synchronized state
   const [testState, setTestState] = useState<RecordingState | null>(initialState ?? null);
   const activeState: RecordingState = testState ?? hookState;
 
   const [settings, setSettings] = useState<RecorderSettings>(DEFAULT_SETTINGS);
+  const [isMicMuted, setIsMicMuted] = useState<boolean>(!DEFAULT_SETTINGS.micAudio);
   const [seconds, setSeconds] = useState<number>(0);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [position, setPosition] = useState<{ x: number; y: number }>(() => {
@@ -67,9 +68,41 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     };
   });
 
-  // Load preferences
+  // Load preferences and sync with background active recording on mount / page reload
   useEffect(() => {
-    getSettings().then((s) => setSettings(s));
+    getSettings().then((s) => {
+      setSettings(s);
+      setIsMicMuted(!s.micAudio);
+    });
+
+    // Query active background recording state on load/reload to persist recording across page navigations
+    try {
+      if (typeof Browser !== "undefined" && Browser.runtime?.sendMessage) {
+        Browser.runtime
+          .sendMessage({ type: "SRP_GET_STATE" })
+          .then((res: unknown) => {
+            const update = res as StateUpdateMessage;
+            if (update && update.type === "SRP_STATE_UPDATE") {
+              if (update.state && update.state !== "IDLE") {
+                setTestState(update.state);
+                if (
+                  update.startedAt &&
+                  (update.state === "RECORDING" || update.state === "PAUSED")
+                ) {
+                  const elapsedSec = Math.floor((Date.now() - update.startedAt) / 1000);
+                  setSeconds(Math.max(0, elapsedSec));
+                }
+                if (typeof update.isMicMuted === "boolean") {
+                  setIsMicMuted(update.isMicMuted);
+                }
+              }
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {
+      // Non-extension test environment
+    }
   }, []);
 
   const isDraggingRef = useRef<boolean>(false);
@@ -105,12 +138,16 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
 
       if (message.type === "SRP_STATE_UPDATE") {
         const update = message as StateUpdateMessage;
-        if (initialState !== undefined) {
-          setTestState(update.state);
-        }
-        if (update.startedAt && update.state === "RECORDING") {
+        setTestState(update.state);
+        if (
+          update.startedAt &&
+          (update.state === "RECORDING" || update.state === "PAUSED")
+        ) {
           const elapsedSec = Math.floor((Date.now() - update.startedAt) / 1000);
           setSeconds(Math.max(0, elapsedSec));
+        }
+        if (typeof update.isMicMuted === "boolean") {
+          setIsMicMuted(update.isMicMuted);
         }
       } else if (message.type === "SRP_TOGGLE_WIDGET") {
         setIsMinimized((prev) => !prev);
@@ -134,7 +171,7 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
         // ignore
       }
     };
-  }, [initialState]);
+  }, []);
 
   // Timer counter
   useEffect(() => {
@@ -194,11 +231,38 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     }
   }, []);
 
+  // Toggle mic setting directly from launcher pill
+  const handleToggleMicSetting = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextVal = !settings.micAudio;
+    const updated = await saveSettings({ micAudio: nextVal });
+    setSettings(updated);
+    setIsMicMuted(!nextVal);
+  }, [settings.micAudio]);
+
+  // Live mute/unmute during active recording
+  const handleLiveToggleMic = useCallback(() => {
+    const nextMuted = !isMicMuted;
+    setIsMicMuted(nextMuted);
+    try {
+      if (typeof Browser !== "undefined" && Browser.runtime?.sendMessage) {
+        Browser.runtime
+          .sendMessage({
+            type: "SRP_TOGGLE_MIC",
+            muted: nextMuted,
+          })
+          .catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }, [isMicMuted]);
+
   // Action Handlers
   const handleStart = useCallback(async () => {
     onStart?.();
     const currentSettings = await getSettings();
-    startRecording({
+    const opts = {
       format: currentSettings.format,
       quality: currentSettings.quality,
       videoBitsPerSecond: QUALITY_PRESETS[currentSettings.quality]?.bitrate,
@@ -208,33 +272,51 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
       micDeviceId: currentSettings.micDeviceId,
       audioOutputDeviceId: currentSettings.audioOutputDeviceId,
       filenamePrefix: currentSettings.filenamePrefix,
-    });
-  }, [onStart, startRecording]);
+    };
 
+    // Forward to background to ensure persistent recording across page reloads
+    try {
+      if (typeof Browser !== "undefined" && Browser.runtime?.sendMessage) {
+        Browser.runtime
+          .sendMessage({
+            type: "SRP_START_RECORDING",
+            options: opts,
+          })
+          .catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+
+    startRecording(opts);
+  }, [onStart, startRecording]);
 
   const handlePauseResume = useCallback(() => {
     if (activeState === "RECORDING") {
       onPause?.();
       pauseRecording();
-      if (initialState !== undefined) {
-        setTestState("PAUSED");
-      }
+      setTestState("PAUSED");
+      try {
+        Browser.runtime?.sendMessage({ type: "SRP_PAUSE_RECORDING" }).catch(() => {});
+      } catch {}
     } else if (activeState === "PAUSED") {
       onResume?.();
       resumeRecording();
-      if (initialState !== undefined) {
-        setTestState("RECORDING");
-      }
+      setTestState("RECORDING");
+      try {
+        Browser.runtime?.sendMessage({ type: "SRP_RESUME_RECORDING" }).catch(() => {});
+      } catch {}
     }
-  }, [activeState, onPause, onResume, pauseRecording, resumeRecording, initialState]);
+  }, [activeState, onPause, onResume, pauseRecording, resumeRecording]);
 
   const handleStop = useCallback(() => {
     onStop?.();
     stopRecording();
-    if (initialState !== undefined) {
-      setTestState("COMPLETED");
-    }
-  }, [onStop, stopRecording, initialState]);
+    setTestState("COMPLETED");
+    try {
+      Browser.runtime?.sendMessage({ type: "SRP_STOP_RECORDING" }).catch(() => {});
+    } catch {}
+  }, [onStop, stopRecording]);
 
   const handleCancel = useCallback(() => {
     let confirmCancel = true;
@@ -247,12 +329,13 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     if (confirmCancel) {
       onCancel?.();
       cancelRecording();
-      if (initialState !== undefined) {
-        setTestState("IDLE");
-      }
+      setTestState("IDLE");
       setSeconds(0);
+      try {
+        Browser.runtime?.sendMessage({ type: "SRP_CANCEL_RECORDING" }).catch(() => {});
+      } catch {}
     }
-  }, [confirmHandler, onCancel, cancelRecording, initialState]);
+  }, [confirmHandler, onCancel, cancelRecording]);
 
   const handleDownloadAgain = useCallback(async () => {
     const s = await getSettings();
@@ -331,6 +414,26 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
             <div className="srp-idle-record-dot" />
             <span className="srp-idle-label">Record Screen</span>
           </div>
+
+          {/* Dedicated Mic Toggle Button in launcher pill */}
+          <button
+            type="button"
+            className={`srp-btn-mic-toggle ${settings.micAudio ? "active" : "muted"}`}
+            onClick={handleToggleMicSetting}
+            title={settings.micAudio ? "Microphone: ON (click to mute)" : "Microphone: OFF (click to enable)"}
+            aria-label={settings.micAudio ? "Disable microphone" : "Enable microphone"}
+          >
+            {settings.micAudio ? (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+              </svg>
+            ) : (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17L14.9 11.1c.06-.36.1-.73.1-1.1V5c0-1.66-1.34-3-3-3-.94 0-1.78.44-2.33 1.12l5.31 5.05zm-4.98 4.98c-1.66 0-3-1.34-3-3V11H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c1.07-.15 2.07-.58 2.92-1.22l-1.44-1.44c-.45.36-.95.63-1.48.74v-.85zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l4.07 4.07 1.27-1.27L4.27 3z" />
+              </svg>
+            )}
+          </button>
         </div>
       ) : activeState === "REQUESTING_PERMISSION" ? (
         /* 3. REQUESTING_PERMISSION State: Spinner feedback */
@@ -453,6 +556,26 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
+            </button>
+
+            {/* Live Microphone Toggle */}
+            <button
+              type="button"
+              className={`srp-btn ${isMicMuted ? "mic-muted" : "mic-active"}`}
+              onClick={handleLiveToggleMic}
+              data-tooltip={isMicMuted ? "Unmute Mic" : "Mute Mic"}
+              aria-label={isMicMuted ? "Unmute microphone" : "Mute microphone"}
+            >
+              {isMicMuted ? (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17L14.9 11.1c.06-.36.1-.73.1-1.1V5c0-1.66-1.34-3-3-3-.94 0-1.78.44-2.33 1.12l5.31 5.05zm-4.98 4.98c-1.66 0-3-1.34-3-3V11H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c1.07-.15 2.07-.58 2.92-1.22l-1.44-1.44c-.45.36-.95.63-1.48.74v-.85zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l4.07 4.07 1.27-1.27L4.27 3z" />
+                </svg>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                </svg>
+              )}
             </button>
 
             <div className="srp-divider" />

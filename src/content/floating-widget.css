@@ -282,6 +282,59 @@
   white-space: nowrap;
 }
 
+/* Mic Toggle Button in Idle Pill & Actions */
+.srp-btn-mic-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+}
+
+.srp-btn-mic-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+.srp-btn-mic-toggle.active {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.6);
+  color: #34d399;
+}
+
+.srp-btn-mic-toggle.active:hover {
+  background: rgba(16, 185, 129, 0.32);
+  color: #6ee7b7;
+}
+
+.srp-btn-mic-toggle.muted {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.srp-btn-mic-toggle.muted:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+.srp-btn.mic-active {
+  color: #34d399;
+}
+
+.srp-btn.mic-muted {
+  color: #f87171;
+}
+
 /* Completed & Download Pill */
 .srp-completed-pill {
   display: flex;

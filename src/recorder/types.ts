@@ -48,6 +48,7 @@ export interface RecorderOptions {
   audioBitsPerSecond?: number;
   frameRate?: number;
   filenamePrefix?: string;
+  streamId?: string;
 }
 
 export type StateChangeListener = (state: RecordingState) => void;

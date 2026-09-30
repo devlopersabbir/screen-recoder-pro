@@ -172,4 +172,26 @@ describe("FloatingWidget Component", () => {
     expect(getByText("✓ Ready")).toBeInTheDocument();
     expect(getByRole("button", { name: /download/i })).toBeInTheDocument();
   });
+
+  it("renders microphone toggle button in IDLE pill and allows toggling mic setting", async () => {
+    const { getByRole } = render(<FloatingWidget initialState="IDLE" />);
+    const micBtn = getByRole("button", { name: /(enable|disable) microphone/i });
+    expect(micBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(micBtn);
+    });
+
+    expect(micBtn).toBeInTheDocument();
+  });
+
+  it("renders live microphone toggle button in active RECORDING toolbar and allows toggling", () => {
+    const { getByRole } = render(<FloatingWidget initialState="RECORDING" />);
+    const liveMicBtn = getByRole("button", { name: /(mute|unmute) microphone/i });
+    expect(liveMicBtn).toBeInTheDocument();
+
+    fireEvent.click(liveMicBtn);
+    expect(getByRole("button", { name: /(mute|unmute) microphone/i })).toBeInTheDocument();
+  });
 });
+
