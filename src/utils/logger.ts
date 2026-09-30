@@ -44,22 +44,41 @@ class LoggerRegistry {
     this.maxHistory = limit;
   }
 
+  private formatData(data: unknown): unknown {
+    if (data instanceof Error) {
+      return {
+        name: data.name,
+        message: data.message,
+        stack: data.stack,
+      };
+    }
+    return data;
+  }
+
   public addEntry(entry: LogEntry): void {
     if (!this.isEnabled) return;
 
-    this.history.push(entry);
+    const formattedEntry: LogEntry = {
+      ...entry,
+      data: entry.data !== undefined ? this.formatData(entry.data) : undefined,
+    };
+
+    this.history.push(formattedEntry);
     if (this.history.length > this.maxHistory) {
       this.history.shift();
     }
 
     if (LOG_LEVEL_PRIORITY[entry.level] >= LOG_LEVEL_PRIORITY[this.minLevel]) {
-      this.writeToConsole(entry);
+      this.writeToConsole(formattedEntry);
     }
   }
 
   private writeToConsole(entry: LogEntry): void {
     const prefix = `[${entry.timestamp.split("T")[1].slice(0, 8)}] [${entry.level}] [${entry.scope}]:`;
-    const args = entry.data !== undefined ? [prefix, entry.message, entry.data] : [prefix, entry.message];
+    const dataOutput = entry.data instanceof Error || (entry.data && typeof entry.data === "object")
+      ? entry.data
+      : entry.data;
+    const args = entry.data !== undefined ? [prefix, entry.message, dataOutput] : [prefix, entry.message];
 
     switch (entry.level) {
       case "DEBUG":

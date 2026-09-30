@@ -117,7 +117,7 @@ export class RecorderService {
     }
   }
 
-  private broadcastState(newState: RecordingState): void {
+  private broadcastState(newState: RecordingState, result?: RecordingResult): void {
     try {
       if (typeof Browser !== "undefined" && Browser.runtime?.sendMessage) {
         Browser.runtime
@@ -127,6 +127,7 @@ export class RecorderService {
             isPaused: newState === "PAUSED",
             startedAt: this.startTime,
             durationMs: this.startTime ? Date.now() - this.startTime : 0,
+            result,
           })
           .catch(() => {});
       }
@@ -263,26 +264,113 @@ export class RecorderService {
       let stream: MediaStream;
 
       if (options.streamId) {
-        // Capture stream using desktopCapture streamId (ideal for background/offscreen recording)
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            mandatory: {
-              chromeMediaSource: "desktop",
-              chromeMediaSourceId: options.streamId,
-              maxFrameRate: frameRate,
-              maxWidth: idealWidth,
-              maxHeight: idealHeight,
-            },
-          } as any,
-          audio: options.audio
-            ? ({
-                mandatory: {
-                  chromeMediaSource: "desktop",
-                  chromeMediaSourceId: options.streamId,
-                },
-              } as any)
-            : false,
-        });
+        // Multi-tier fallback to handle screen, window, or tab sources,
+        // and handle cases where audio was not shared by the user in the picker dialog.
+        const id = options.streamId;
+        const videoConstraintsDesktop = {
+          mandatory: {
+            chromeMediaSource: "desktop",
+            chromeMediaSourceId: id,
+            maxFrameRate: frameRate,
+            maxWidth: idealWidth,
+            maxHeight: idealHeight,
+          },
+        } as any;
+        const videoConstraintsTab = {
+          mandatory: {
+            chromeMediaSource: "tab",
+            chromeMediaSourceId: id,
+          },
+        } as any;
+        const audioConstraintsDesktop = options.audio
+          ? ({
+              mandatory: {
+                chromeMediaSource: "desktop",
+                chromeMediaSourceId: id,
+              },
+            } as any)
+          : false;
+        const audioConstraintsTab = options.audio
+          ? ({
+              mandatory: {
+                chromeMediaSource: "tab",
+                chromeMediaSourceId: id,
+              },
+            } as any)
+          : false;
+
+        let captured: MediaStream | null = null;
+        let lastError: unknown = null;
+
+        // Attempt 1: Desktop source with audio (if requested)
+        if (options.audio) {
+          try {
+            captured = await navigator.mediaDevices.getUserMedia({
+              video: videoConstraintsDesktop,
+              audio: audioConstraintsDesktop,
+            });
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        // Attempt 2: Desktop source without audio (in case audio sharing was unselected)
+        if (!captured) {
+          try {
+            captured = await navigator.mediaDevices.getUserMedia({
+              video: videoConstraintsDesktop,
+              audio: false,
+            });
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        // Attempt 3: Tab source with audio (if user selected a browser tab)
+        if (!captured && options.audio) {
+          try {
+            captured = await navigator.mediaDevices.getUserMedia({
+              video: videoConstraintsTab,
+              audio: audioConstraintsTab,
+            });
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        // Attempt 4: Tab source without audio
+        if (!captured) {
+          try {
+            captured = await navigator.mediaDevices.getUserMedia({
+              video: videoConstraintsTab,
+              audio: false,
+            });
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        // Attempt 5: Fallback to getDisplayMedia if available in current window
+        if (!captured && typeof navigator.mediaDevices?.getDisplayMedia === "function") {
+          try {
+            captured = await navigator.mediaDevices.getDisplayMedia({
+              video: {
+                displaySurface: "monitor",
+                frameRate: { ideal: frameRate, max: frameRate },
+                width: { ideal: idealWidth, max: 3840 },
+                height: { ideal: idealHeight, max: 2160 },
+              },
+              audio: options.audio ?? true,
+            });
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        if (!captured) {
+          throw lastError || new Error("Failed to capture stream from chosen source");
+        }
+        stream = captured;
       } else {
         // Prompt native screen-sharing picker with high-fidelity constraints
         stream = await navigator.mediaDevices.getDisplayMedia({
@@ -561,6 +649,7 @@ export class RecorderService {
     this.snapshotListeners.forEach((l) => l());
     this.stateListeners.forEach((listener) => listener("COMPLETED"));
     this.completeListeners.forEach((listener) => listener(result));
+    this.broadcastState("COMPLETED", result);
   }
 
   /**

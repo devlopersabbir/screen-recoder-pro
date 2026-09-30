@@ -175,7 +175,13 @@ Browser.runtime.onMessage.addListener(async (rawMsg: unknown, sender: any) => {
 
     case "SRP_START_RECORDING": {
       const startMsg = message as StartRecordingMessage;
-      const targetTab = sender?.tab;
+      let targetTab = sender?.tab;
+      if (!targetTab && typeof chrome !== "undefined" && chrome.tabs?.query) {
+        try {
+          const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          targetTab = activeTab;
+        } catch {}
+      }
 
       // When running in Chrome with desktopCapture and offscreen support:
       // Use chooseDesktopMedia to show native screen sharing picker and streamId
@@ -194,36 +200,48 @@ Browser.runtime.onMessage.addListener(async (rawMsg: unknown, sender: any) => {
           durationMs: 0,
         });
 
-        chrome.desktopCapture.chooseDesktopMedia(
-          ["screen", "window", "tab", "audio"],
-          targetTab,
-          async (streamId: string | null) => {
-            if (!streamId) {
-              log.info("User cancelled desktop capture dialog");
-              currentSession = { state: "IDLE", isPaused: false };
-              await saveSession();
-              await broadcastToTabs({
-                type: "SRP_STATE_UPDATE",
-                state: "IDLE",
-                isPaused: false,
-                durationMs: 0,
-              });
-              return;
-            }
+        try {
+          chrome.desktopCapture.chooseDesktopMedia(
+            ["screen", "window", "tab", "audio"],
+            targetTab,
+            async (streamId: string | null) => {
+              if (!streamId) {
+                log.info("User cancelled desktop capture dialog");
+                currentSession = { state: "IDLE", isPaused: false };
+                await saveSession();
+                await broadcastToTabs({
+                  type: "SRP_STATE_UPDATE",
+                  state: "IDLE",
+                  isPaused: false,
+                  durationMs: 0,
+                });
+                return;
+              }
 
-            await ensureOffscreenDocument();
-            // Forward to offscreen with streamId so recording runs in persistent background
-            Browser.runtime
-              .sendMessage({
-                type: "SRP_START_RECORDING",
-                options: {
-                  ...startMsg.options,
-                  streamId,
-                },
-              })
-              .catch(() => {});
-          }
-        );
+              await ensureOffscreenDocument();
+              // Forward to offscreen with streamId so recording runs in persistent background
+              Browser.runtime
+                .sendMessage({
+                  type: "SRP_START_RECORDING",
+                  options: {
+                    ...startMsg.options,
+                    streamId,
+                  },
+                })
+                .catch(() => {});
+            }
+          );
+        } catch (captureErr) {
+          log.error("Failed to invoke chooseDesktopMedia:", captureErr);
+          currentSession = { state: "IDLE", isPaused: false };
+          await saveSession();
+          await broadcastToTabs({
+            type: "SRP_STATE_UPDATE",
+            state: "IDLE",
+            isPaused: false,
+            durationMs: 0,
+          });
+        }
       } else {
         // Fallback: create offscreen document or forward directly
         await ensureOffscreenDocument();

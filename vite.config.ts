@@ -5,20 +5,52 @@ import fs from "fs";
 
 function findChromiumBinary(preferred?: string): string | undefined {
   const isBravePreferred = preferred === "brave" || !preferred;
-  const candidates = [
+  const localAppData = process.env.LOCALAPPDATA || "";
+  const programFiles = process.env.ProgramFiles || "C:\\Program Files";
+  const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+
+  const braveCandidates = [
     process.env.BRAVE_BINARY,
+    // Windows
+    `${programFiles}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`,
+    `${programFilesX86}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`,
+    `${localAppData}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`,
+    // macOS
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    // Linux
+    "/usr/bin/brave-browser",
+    "/usr/bin/brave",
+  ];
+
+  const chromeCandidates = [
     process.env.CHROME_BINARY,
-    ...(isBravePreferred
-      ? [
-          "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        ]
-      : [
-          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-          "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-        ]),
+    // Windows
+    `${programFiles}\\Google\\Chrome\\Application\\chrome.exe`,
+    `${programFilesX86}\\Google\\Chrome\\Application\\chrome.exe`,
+    `${localAppData}\\Google\\Chrome\\Application\\chrome.exe`,
+    // macOS
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    // Linux
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/chromium",
+  ];
+
+  const edgeCandidates = [
+    // Windows
+    `${programFilesX86}\\Microsoft\\Edge\\Application\\msedge.exe`,
+    `${programFiles}\\Microsoft\\Edge\\Application\\msedge.exe`,
+    `${localAppData}\\Microsoft\\Edge\\Application\\msedge.exe`,
+    // macOS
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    // Linux
+    "/usr/bin/microsoft-edge",
+  ];
+
+  const candidates = [
+    ...(isBravePreferred
+      ? [...braveCandidates, ...chromeCandidates, ...edgeCandidates]
+      : [...chromeCandidates, ...braveCandidates, ...edgeCandidates]),
   ].filter(Boolean) as string[];
 
   for (const candidate of candidates) {
@@ -30,11 +62,22 @@ function findChromiumBinary(preferred?: string): string | undefined {
 }
 
 function findFirefoxBinary(): string | undefined {
+  const localAppData = process.env.LOCALAPPDATA || "";
+  const programFiles = process.env.ProgramFiles || "C:\\Program Files";
+  const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+
   const candidates = [
     process.env.FIREFOX_BINARY,
+    // Windows
+    `${programFiles}\\Mozilla Firefox\\firefox.exe`,
+    `${programFilesX86}\\Mozilla Firefox\\firefox.exe`,
+    `${localAppData}\\Mozilla Firefox\\firefox.exe`,
+    // macOS
     "/Applications/Firefox.app/Contents/MacOS/firefox",
     "/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox",
     "/Applications/Firefox Nightly.app/Contents/MacOS/firefox",
+    // Linux
+    "/usr/bin/firefox",
   ].filter(Boolean) as string[];
 
   for (const candidate of candidates) {

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Browser from "webextension-polyfill";
 import { useRecorder } from "../hooks/useRecorder";
-import { RecordingState } from "../recorder/types";
+import { RecordingResult, RecordingState } from "../recorder/types";
 import {
   ExtensionMessage,
   StateUpdateMessage,
 } from "../shared/messages";
 import { DEFAULT_SETTINGS, getSettings, saveSettings, QUALITY_PRESETS, RecorderSettings } from "../utils/settings";
+import { downloadBlob } from "../utils/download";
 
 export interface FloatingWidgetProps {
   initialState?: RecordingState;
@@ -55,7 +56,14 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
 
   // Support manual prop override for unit tests or background-synchronized state
   const [testState, setTestState] = useState<RecordingState | null>(initialState ?? null);
-  const activeState: RecordingState = testState ?? hookState;
+  const [bgResult, setBgResult] = useState<RecordingResult | null>(null);
+  const activeResult = result || bgResult;
+
+  // Active state transitions to COMPLETED when either local recorder or background completes
+  const activeState: RecordingState =
+    hookState === "COMPLETED" || testState === "COMPLETED"
+      ? "COMPLETED"
+      : (testState ?? hookState);
 
   const [settings, setSettings] = useState<RecorderSettings>(DEFAULT_SETTINGS);
   const [isMicMuted, setIsMicMuted] = useState<boolean>(!DEFAULT_SETTINGS.micAudio);
@@ -112,11 +120,11 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
 
   // Automatically trigger download when recording completes
   useEffect(() => {
-    if (activeState === "COMPLETED" && result && !hasAutoDownloadedRef.current) {
+    if (activeState === "COMPLETED" && activeResult && !hasAutoDownloadedRef.current) {
       hasAutoDownloadedRef.current = true;
       try {
         getSettings().then((s) => {
-          downloadRecording({
+          downloadBlob(activeResult.blob, activeResult.filename, {
             subfolder: s.downloadSubfolder,
             saveAs: s.downloadLocationPrompt,
           });
@@ -128,7 +136,7 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     if (activeState !== "COMPLETED") {
       hasAutoDownloadedRef.current = false;
     }
-  }, [activeState, result, downloadRecording]);
+  }, [activeState, activeResult]);
 
   // Synchronize with background messaging
   useEffect(() => {
@@ -139,6 +147,9 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
       if (message.type === "SRP_STATE_UPDATE") {
         const update = message as StateUpdateMessage;
         setTestState(update.state);
+        if (update.result) {
+          setBgResult(update.result);
+        }
         if (
           update.startedAt &&
           (update.state === "RECORDING" || update.state === "PAUSED")
@@ -275,20 +286,24 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
     };
 
     // Forward to background to ensure persistent recording across page reloads
+    let forwardedToExtension = false;
     try {
-      if (typeof Browser !== "undefined" && Browser.runtime?.sendMessage) {
+      if (typeof Browser !== "undefined" && Browser.runtime?.id && Browser.runtime?.sendMessage) {
         Browser.runtime
           .sendMessage({
             type: "SRP_START_RECORDING",
             options: opts,
           })
           .catch(() => {});
+        forwardedToExtension = true;
       }
     } catch {
       // ignore
     }
 
-    startRecording(opts);
+    if (!forwardedToExtension) {
+      startRecording(opts);
+    }
   }, [onStart, startRecording]);
 
   const handlePauseResume = useCallback(() => {
@@ -339,19 +354,23 @@ export const FloatingWidget: React.FC<FloatingWidgetProps> = ({
 
   const handleDownloadAgain = useCallback(async () => {
     const s = await getSettings();
-    downloadRecording({
-      subfolder: s.downloadSubfolder,
-      saveAs: s.downloadLocationPrompt,
-    });
-  }, [downloadRecording]);
+    if (activeResult) {
+      downloadBlob(activeResult.blob, activeResult.filename, {
+        subfolder: s.downloadSubfolder,
+        saveAs: s.downloadLocationPrompt,
+      });
+    }
+  }, [activeResult]);
 
   const handleReset = useCallback(() => {
     resetRecording();
-    if (initialState !== undefined) {
-      setTestState("IDLE");
-    }
+    setBgResult(null);
+    setTestState("IDLE");
     setSeconds(0);
-  }, [resetRecording, initialState]);
+    try {
+      Browser.runtime?.sendMessage({ type: "SRP_CANCEL_RECORDING" }).catch(() => {});
+    } catch {}
+  }, [resetRecording]);
 
   const isPaused = activeState === "PAUSED";
 
